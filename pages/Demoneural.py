@@ -4,7 +4,8 @@ import streamlit as st
 from PIL import Image
 import tensorflow_datasets as tfds
 from rembg import remove
-
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 st.subheader("DEMO Neural Network (MobileNetV2)")
 
 @st.cache_resource

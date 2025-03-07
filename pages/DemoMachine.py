@@ -7,8 +7,7 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import cross_val_score
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 st.title("Demo SVM & KNN ")
 
 # โหลดข้อมูล
