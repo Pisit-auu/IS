@@ -13,7 +13,12 @@ st.title("Demo SVM & KNN ")
 # โหลดข้อมูล
 file_path = "pages/adult.data"
 # ใช้ na_values แปลง "?" เป็นNaN
-df = pd.read_csv(file_path, sep=",\s*", engine='python', na_values=["?"])
+columns = [
+    "age", "workclass", "fnlwgt", "education", "education-num", "marital-status",
+    "occupation", "relationship", "race", "sex", "capital-gain", "capital-loss",
+    "hours-per-week", "native-country", "income"
+]
+df = pd.read_csv(file_path, sep=",\s*", engine='python', na_values=["?"], names=columns)
 st.subheader("Features ของ Dataset")
 st.write("""
 - "age": อายุของบุคคล
@@ -32,6 +37,7 @@ st.write("""
 - "native-country":ประเทศที่เกิด
 - "income": รายได้
          """)
+
 
 #ตัวอย่างข้อมูล 
 st.title("Dataset ดิบ")
@@ -96,31 +102,33 @@ st.subheader("ผลลัพธ์ของ KNN")
 st.dataframe(pd.DataFrame(knn_report).transpose())
 
 
-st.subheader("ทำนายจากข้อมูลที่สร้างขึ้น")
+st.subheader("ทำนายจากข้อมูลที่สุ่ม")
 
 #สร้างข้อมูลจากข้อมูลที่มี
-random_data = []
-for col in X.columns:
-    if col in label_encoders:  
-        random_value = np.random.choice(df[col].unique()) 
-    else:  #ถ้าเป็นข้อมูลตัวเลข
-        min_val, max_val = df[col].min(), df[col].max()
-        random_value = np.random.uniform(min_val, max_val) 
-    random_data.append(random_value)
+if st.button("สุ่มข้อมูล"):
+    random_data = []
+    for col in X.columns:
+        if col in label_encoders:  
+            random_value = np.random.choice(df[col].unique()) 
+        else: 
+            min_val, max_val = df[col].min(), df[col].max()
+            random_value = np.random.uniform(min_val, max_val) 
+        random_data.append(random_value)
 
-# นำข้อมูลไปทำScaling
-random_data = np.array(random_data).reshape(1, -1)
-random_data_scaled = scaler.transform(random_data)
 
-#ใช้โมเดลทำนายผล
-pred_svm = svm_model.predict(random_data_scaled)
-pred_knn = knn_model.predict(random_data_scaled)
+    random_data = np.array(random_data).reshape(1, -1)
+    random_data_scaled = scaler.transform(random_data)
 
-# แปลงค่าที่ทำนายกลับเป็นข้อความ
-income_classes = label_encoders[df.columns[-1]].inverse_transform([pred_svm[0], pred_knn[0]])
+    # ใช้โมเดลทำนายผล
+    pred_svm = svm_model.predict(random_data_scaled)
+    pred_knn = knn_model.predict(random_data_scaled)
 
-st.write("**ข้อมูลที่ใช้ทำนาย**")
-random_df = pd.DataFrame([random_data[0]], columns=X.columns)
-st.dataframe(random_df)
-st.write(f"**SVM คาดการณ์ว่า:** {income_classes[0]}")
-st.write(f"**KNN คาดการณ์ว่า:** {income_classes[1]}")
+    # แปลงค่าที่ทำนายกลับเป็นข้อความ
+    income_classes = label_encoders[df.columns[-1]].inverse_transform([pred_svm[0], pred_knn[0]])
+
+    # แสดงผลลัพธ์
+    st.write("**ข้อมูลที่ใช้ทำนาย**")
+    random_df = pd.DataFrame([random_data[0]], columns=X.columns)
+    st.dataframe(random_df)
+    st.write(f"**SVM คาดการณ์ว่า:** {income_classes[0]}")
+    st.write(f"**KNN คาดการณ์ว่า:** {income_classes[1]}")

@@ -46,6 +46,14 @@ st.subheader("การทำนาย")
 st.write("กำหนดว่ารายได้ของบุคคลนั้นเกิน 50,000 ดอลลาร์ต่อปีหรือไม่ ")
 
 st.title("ขั้นตอนการพัฒนา Support Vector Machine และ K-Nearest Neighbors")
+st.subheader("""นำเข้าไฟล์
+             columns = [
+                 "age", "workclass", "fnlwgt", "education", "education-num", "marital-status",
+                "occupation", "relationship", "race", "sex", "capital-gain", "capital-loss",
+                 "hours-per-week", "native-country", "income"]
+               df = pd.read_csv(file_path, sep=",\s*", engine='python', na_values=["?"], names=columns)
+             """)
+st.write("""-  ใช้ na_values แปลง "?" เป็นNaN""" )
 st.subheader("จัดการ Missing Values")
 st.write("""-  แทนค่า None ด้วย Unknown  df.fillna("Unknown", inplace=True)""" )
 st.subheader("""  แปลงข้อมูล categorical เป็นตัวเลข ด้วย label_encoders

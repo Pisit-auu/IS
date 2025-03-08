@@ -8,9 +8,8 @@ import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-st.subheader("Demo Neural Network (MobileNetV2)")
+st.title("Demo Neural Network")
 
-# แคชฟังก์ชันที่โหลด dataset
 def load_dataset():
     dataset_name = "rock_paper_scissors"
     dataset, info = tfds.load(dataset_name, with_info=True, as_supervised=True)
@@ -59,10 +58,9 @@ test_data = (
 
 # โหลดโมเดลที่ฝึกเสร็จแล้ว
 def load_model():
-    model = tf.keras.models.load_model('mobilenetv2_model.keras')  # เปลี่ยนให้เป็น path ของโมเดลที่บันทึกไว้
+    model = tf.keras.models.load_model('mobilenetv2_model.keras')
     return model
 
-# หากยังไม่มีโมเดลที่ฝึกเสร็จแล้ว ให้ฝึกโมเดล
 def train_model():
     base_model = tf.keras.applications.MobileNetV2(input_shape=(128, 128, 3), include_top=False, weights="imagenet")
     base_model.trainable = False
@@ -94,7 +92,18 @@ if os.path.exists('mobilenetv2_model.keras'):
 else:
     model = train_model()
 
-st.title("Demo")
+st.subheader("ตัวอย่างภาพที่ใช้ทดสอบ")
+col1, col2, col3 = st.columns(3)
+image1 = Image.open("paper.png")
+image2 = Image.open("rock.png")
+image3 = Image.open("scrissor.png")
+with col1:
+    st.image(image1, caption="ภาพกระดาษ", width=150)
+with col2:
+    st.image(image2, caption="ภาพค้อน", width=150)
+with col3:
+    st.image(image3, caption="ภาพกรรไกร", width=150)
+
 st.write("อัปโหลดภาพของคุณเพื่อทดสอบ")
 
 uploaded_file = st.file_uploader("อัปโหลดภาพ", type=["png", "jpg", "jpeg"])
@@ -111,7 +120,7 @@ if uploaded_file:
     image = tf.image.resize(image, image_size) / 255.0
     image = np.expand_dims(image, axis=0)
 
-    with st.spinner("🔮 กำลังทำนาย..."):
+    with st.spinner("กำลังทำนาย..."):
         prediction = model.predict(image)
     
     predicted_class = np.argmax(prediction, axis=1)[0]
@@ -121,5 +130,3 @@ if uploaded_file:
     st.write(f"คำทำนาย: **{labels[predicted_class]}**")
     st.write("Label Mapping:", info.features["label"].names)
     st.write("Prediction Probabilities:", probabilities)
-else:
-    st.warning(" กรุณาอัปโหลดภาพก่อนทำการทำนาย")
