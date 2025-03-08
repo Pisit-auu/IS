@@ -6,8 +6,12 @@ st.title("Machine Learning")
 st.subheader("การเตรียมข้อมูล")
 st.write("- Dataset คือ Adult")
 file_path = "pages/adult.data"
-
-df = pd.read_csv(file_path, sep=",\s*", engine='python', na_values=["?"])
+columns = [
+    "age", "workclass", "fnlwgt", "education", "education-num", "marital-status",
+    "occupation", "relationship", "race", "sex", "capital-gain", "capital-loss",
+    "hours-per-week", "native-country", "income"
+]
+df = pd.read_csv(file_path, sep=",\s*", engine='python', na_values=["?"], names=columns)
 
 st.subheader("Dataset ดิบ")
 st.dataframe(df, height=300)
