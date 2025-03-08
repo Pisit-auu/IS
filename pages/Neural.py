@@ -140,7 +140,9 @@ st.subheader("""  การโหลดและฝึกโมเดล MobileN
             )
 
             early_stopping = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=3)
-            model.fit(train_data, epochs=20, validation_data=test_data, callbacks=[early_stopping])
+  
+            class_weights = {0: 1.0, 1: 2.0, 2: 3.0}  
+            model.fit(train_data, epochs=20, validation_data=test_data, class_weight=class_weights, callbacks=[early_stopping])
 
             return model
              """ )
@@ -150,6 +152,7 @@ st.write("""MobileNetV2 เป็นฐานในการสร้างโ�
 - โมเดลนี้ฝึกด้วย Adam optimizer เป็นหนึ่งในอัลกอริธึมที่ใช้สำหรับการปรับค่าพารามิเตอร์ของโมเดล 
 - และ Sparse Categorical Crossentropy loss  ใช้สำหรับปัญหาการจำแนกประเภทที่มี Label เป็นตัวเลข (Integer) แทน One-Hot Encoding
 - ใช้ EarlyStopping เพื่อหยุดการฝึกหากไม่เห็นการปรับปรุงใน validation loss
+- ใช้ class_weights เพื่อ เน้นที่กระดาษกับกรรไกร
 """ )
 
 st.subheader("""  การทำนายภาพที่อัปโหลด

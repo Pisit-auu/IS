@@ -8,7 +8,7 @@ import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-st.subheader("DEMO Neural Network (MobileNetV2)")
+st.subheader("Demo Neural Network (MobileNetV2)")
 
 # แคชฟังก์ชันที่โหลด dataset
 def load_dataset():
@@ -81,7 +81,9 @@ def train_model():
     )
 
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=3)
-    model.fit(train_data, epochs=20, validation_data=test_data, callbacks=[early_stopping])
+  
+    class_weights = {0: 1.0, 1: 2.0, 2: 3.0}  
+    model.fit(train_data, epochs=20, validation_data=test_data, class_weight=class_weights, callbacks=[early_stopping])
 
     model.save('mobilenetv2_model.keras')  # บันทึกโมเดลที่ฝึกเสร็จแล้ว
     return model
@@ -92,8 +94,8 @@ if os.path.exists('mobilenetv2_model.keras'):
 else:
     model = train_model()
 
-st.title("Demo - Machine Learning Model (MobileNetV2)")
-st.write("อัปโหลดภาพของคุณเพื่อทดสอบ Machine Learning Model")
+st.title("Demo")
+st.write("อัปโหลดภาพของคุณเพื่อทดสอบ")
 
 uploaded_file = st.file_uploader("อัปโหลดภาพ", type=["png", "jpg", "jpeg"])
 if uploaded_file:
