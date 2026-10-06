@@ -5,11 +5,16 @@ from PIL import Image
 import tensorflow_datasets as tfds
 from rembg import remove
 import os
+from style import apply_style, lede
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-st.title("Demo Neural Network")
+apply_style("Demo Neural Network", ":material/back_hand:")
 
+st.title("Demo Neural Network")
+lede("อัปโหลดภาพมือ แล้วให้โมเดล MobileNetV2 ทายว่าเป็น ค้อน กระดาษ หรือ กรรไกร")
+
+@st.cache_resource
 def load_dataset():
     dataset_name = "rock_paper_scissors"
     dataset, info = tfds.load(dataset_name, with_info=True, as_supervised=True)
@@ -57,6 +62,7 @@ test_data = (
 )
 
 # โหลดโมเดลที่ฝึกเสร็จแล้ว
+@st.cache_resource
 def load_model():
     model = tf.keras.models.load_model('mobilenetv2_model.keras')
     return model
@@ -90,7 +96,8 @@ def train_model():
 if os.path.exists('mobilenetv2_model.keras'):
     model = load_model()
 else:
-    model = train_model()
+    with st.spinner("ยังไม่มีโมเดลที่บันทึกไว้ กำลังฝึกโมเดลใหม่…"):
+        model = train_model()
 
 st.subheader("ตัวอย่างภาพที่ใช้ทดสอบ")
 col1, col2, col3 = st.columns(3)
@@ -104,29 +111,37 @@ with col2:
 with col3:
     st.image(image3, caption="ภาพกรรไกร", width=150)
 
-st.write("อัปโหลดภาพของคุณเพื่อทดสอบ")
+st.subheader("อัปโหลดภาพของคุณเพื่อทดสอบ")
 
 uploaded_file = st.file_uploader("อัปโหลดภาพ", type=["png", "jpg", "jpeg"])
 if uploaded_file:
     image = Image.open(uploaded_file)
-    st.image(image, caption="ภาพที่อัปโหลด", width=250)
 
     # ลบพื้นหลัง
-    image_no_bg = remove(image)
-    st.image(image_no_bg, caption="ภาพหลังจากลบพื้นหลัง", width=250)
+    with st.spinner("กำลังลบพื้นหลัง..."):
+        image_no_bg = remove(image)
 
     # แปลงภาพและทำนาย
-    image = np.array(image.convert("RGB"))
-    image = tf.image.resize(image, image_size) / 255.0
-    image = np.expand_dims(image, axis=0)
+    image_arr = np.array(image.convert("RGB"))
+    image_arr = tf.image.resize(image_arr, image_size) / 255.0
+    image_arr = np.expand_dims(image_arr, axis=0)
 
     with st.spinner("กำลังทำนาย..."):
-        prediction = model.predict(image)
-    
+        prediction = model.predict(image_arr)
+
     predicted_class = np.argmax(prediction, axis=1)[0]
     probabilities = np.squeeze(prediction)
 
-    labels = {0: "✊ Rock", 1: "✋ Paper", 2: "✌️ Scissors"}
-    st.write(f"คำทำนาย: **{labels[predicted_class]}**")
-    st.write("Label Mapping:", info.features["label"].names)
-    st.write("Prediction Probabilities:", probabilities)
+    labels = {0: "ค้อน (Rock)", 1: "กระดาษ (Paper)", 2: "กรรไกร (Scissors)"}
+
+    left, mid, right = st.columns([1, 1, 1.3], gap="large")
+    with left:
+        st.image(image, caption="ภาพที่อัปโหลด", use_container_width=True)
+    with mid:
+        st.image(image_no_bg, caption="ภาพหลังจากลบพื้นหลัง (แสดงเปรียบเทียบ การทำนายใช้ภาพต้นฉบับ)", use_container_width=True)
+    with right:
+        st.caption("คำทำนาย")
+        st.markdown(f'<p class="verdict">{labels[predicted_class]}</p>', unsafe_allow_html=True)
+        for i, name in enumerate(info.features["label"].names):
+            st.progress(float(probabilities[i]), text=f"{labels[i]} · {probabilities[i]*100:.1f}%")
+        st.caption(f"Label Mapping: {', '.join(f'{i} = {n}' for i, n in enumerate(info.features['label'].names))}")

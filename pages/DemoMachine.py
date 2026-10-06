@@ -7,8 +7,12 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import cross_val_score
+from style import apply_style, lede
 
-st.title("Demo SVM & KNN ")
+apply_style("Demo SVM & KNN", ":material/model_training:")
+
+st.title("Demo SVM & KNN")
+lede("เทรน SVM และ KNN บนชุดข้อมูล Adult แล้วลองสุ่มข้อมูลบุคคลเพื่อดูว่าแต่ละโมเดลทำนายรายได้อย่างไร")
 
 # โหลดข้อมูล
 file_path = "pages/adult.data"
@@ -18,9 +22,13 @@ columns = [
     "occupation", "relationship", "race", "sex", "capital-gain", "capital-loss",
     "hours-per-week", "native-country", "income"
 ]
-df = pd.read_csv(file_path, sep=",\s*", engine='python', na_values=["?"], names=columns)
-st.subheader("Features ของ Dataset")
-st.write("""
+@st.cache_data
+def load_data():
+    return pd.read_csv(file_path, sep=r",\s*", engine='python', na_values=["?"], names=columns)
+
+df = load_data()
+with st.expander("Features ของ Dataset"):
+    st.write("""
 - "age": อายุของบุคคล
 - "workclass": สถานะการทำงาน 
 - "fnlwgt": น้ำหนักทางสถิติของบุคคลในชุดข้อมูล
@@ -40,7 +48,7 @@ st.write("""
 
 
 #ตัวอย่างข้อมูล 
-st.title("Dataset ดิบ")
+st.subheader("Dataset ดิบ")
 st.dataframe(df, height=300)
 
 # แปลง missing เป็น  "Unknown"
@@ -53,7 +61,7 @@ for col in df.select_dtypes(include=["object"]).columns:
     df[col] = le.fit_transform(df[col].astype(str))
     label_encoders[col] = le
 
-st.title("Dataset หลังแปลง")
+st.subheader("Dataset หลังแปลง")
 st.dataframe(df, height=300)
 
 # กำหนด x y
@@ -74,15 +82,22 @@ X_test_scaled = scaler.transform(X_test)
 svm_kernel = "poly"
 knn_neighbors = 17
 
-#train SVM
-svm_model = SVC(kernel="poly")
-svm_model.fit(X_train_scaled, y_train)
-y_pred_svm = svm_model.predict(X_test_scaled)
+# เทรนครั้งเดียวแล้ว cache ไว้ ไม่ต้องเทรนใหม่ทุกครั้งที่กดปุ่ม
+@st.cache_resource
+def train_models(X_train_scaled, y_train, X_test_scaled):
+    #train SVM
+    svm_model = SVC(kernel=svm_kernel)
+    svm_model.fit(X_train_scaled, y_train)
+    y_pred_svm = svm_model.predict(X_test_scaled)
 
-#train KNN
-knn_model = KNeighborsClassifier(n_neighbors=knn_neighbors)
-knn_model.fit(X_train_scaled, y_train)
-y_pred_knn = knn_model.predict(X_test_scaled)
+    #train KNN
+    knn_model = KNeighborsClassifier(n_neighbors=knn_neighbors)
+    knn_model.fit(X_train_scaled, y_train)
+    y_pred_knn = knn_model.predict(X_test_scaled)
+    return svm_model, knn_model, y_pred_svm, y_pred_knn
+
+with st.spinner("กำลังเทรน SVM และ KNN… (ครั้งแรกใช้เวลาประมาณ 20 วินาที)"):
+    svm_model, knn_model, y_pred_svm, y_pred_knn = train_models(X_train_scaled, y_train, X_test_scaled)
 
 # result
 svm_acc = accuracy_score(y_test, y_pred_svm)
@@ -91,21 +106,24 @@ svm_report = classification_report(y_test, y_pred_svm, output_dict=True)
 knn_report = classification_report(y_test, y_pred_knn, output_dict=True)
 
 #  output
-st.subheader("ผลลัพธ์ของโมเดล")
-st.write(f"**Accuracy SVM ({svm_kernel}):** {svm_acc:.4f}")
-st.write(f"**Accuracy KNN ({knn_neighbors} neighbors):** {knn_acc:.4f}")
+st.header("ผลลัพธ์ของโมเดล")
+m1, m2 = st.columns(2)
+m1.metric(f"Accuracy SVM ({svm_kernel})", f"{svm_acc:.4f}")
+m2.metric(f"Accuracy KNN ({knn_neighbors} neighbors)", f"{knn_acc:.4f}")
 
-st.subheader("ผลลัพธ์ของ SVM")
-st.dataframe(pd.DataFrame(svm_report).transpose())
+r1, r2 = st.columns(2)
+with r1:
+    st.subheader("ผลลัพธ์ของ SVM")
+    st.dataframe(pd.DataFrame(svm_report).transpose().style.format("{:.3f}"), use_container_width=True)
+with r2:
+    st.subheader("ผลลัพธ์ของ KNN")
+    st.dataframe(pd.DataFrame(knn_report).transpose().style.format("{:.3f}"), use_container_width=True)
 
-st.subheader("ผลลัพธ์ของ KNN")
-st.dataframe(pd.DataFrame(knn_report).transpose())
 
-
-st.subheader("ทำนายจากข้อมูลที่สุ่ม")
+st.header("ทำนายจากข้อมูลที่สุ่ม")
 
 #สร้างข้อมูลจากข้อมูลที่มี
-if st.button("สุ่มข้อมูล"):
+if st.button("สุ่มข้อมูล", type="primary", icon=":material/casino:"):
     random_data = []
     for col in X.columns:
         if col in label_encoders:  
@@ -116,8 +134,8 @@ if st.button("สุ่มข้อมูล"):
         random_data.append(random_value)
 
 
-    random_data = np.array(random_data).reshape(1, -1)
-    random_data_scaled = scaler.transform(random_data)
+    random_df = pd.DataFrame([random_data], columns=X.columns)
+    random_data_scaled = scaler.transform(random_df)
 
     # ใช้โมเดลทำนายผล
     pred_svm = svm_model.predict(random_data_scaled)
@@ -128,7 +146,9 @@ if st.button("สุ่มข้อมูล"):
 
     # แสดงผลลัพธ์
     st.write("**ข้อมูลที่ใช้ทำนาย**")
-    random_df = pd.DataFrame([random_data[0]], columns=X.columns)
-    st.dataframe(random_df)
-    st.write(f"**SVM คาดการณ์ว่า:** {income_classes[0]}")
-    st.write(f"**KNN คาดการณ์ว่า:** {income_classes[1]}")
+    st.dataframe(random_df, hide_index=True)
+    p1, p2 = st.columns(2)
+    p1.metric("SVM คาดการณ์ว่า", income_classes[0])
+    p2.metric("KNN คาดการณ์ว่า", income_classes[1])
+else:
+    st.caption("กดปุ่มเพื่อสุ่มข้อมูลหนึ่งแถวจากค่าที่มีในชุดข้อมูล แล้วดูผลทำนายของทั้งสองโมเดล")
